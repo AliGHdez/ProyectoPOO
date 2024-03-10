@@ -1,107 +1,129 @@
 class Gato:
     def __init__(self):
-        # Inicializa el tablero del juego con una lista de listas.
-        # Cada sublista representa una fila del tablero, inicializada con espacios en blanco.
+        # Inicializa un tablero de 3x3 con espacios vacíos
         self.tablero = [[' ' for _ in range(3)] for _ in range(3)]
-        # Inicializa el turno del jugador como 'X'.
+        # El primer jugador es 'X'
         self.turno = 'X'
 
     def __repr__(self):
-        # Representa el tablero como una cadena.
-        # Las filas están separadas por saltos de línea y las columnas están separadas por barras verticales.
+        # Representación del tablero actual
         return '\n'.join([' | '.join(row) for row in self.tablero])
 
     def hacer_movimiento(self, fila, columna):
-        # Verifica si la casilla seleccionada está vacía.
-        # Si es así, coloca el símbolo del jugador en esa posición y cambia el turno al otro jugador.
-        # Si no, imprime un mensaje de error.
+        # Coloca el símbolo del jugador actual en el tablero si la casilla está vacía
         if self.tablero[fila][columna] == ' ':
             self.tablero[fila][columna] = self.turno
+            # Cambia el turno al otro jugador
             self.turno = 'O' if self.turno == 'X' else 'X'
         else:
             print("Movimiento inválido. Inténtalo de nuevo.")
 
-    def hay_ganador(self):
-        # Verifica todas las posibles líneas ganadoras en el tablero.
-        # Retorna True si alguna línea contiene solo 'X' o 'O', indicando que hay un ganador.
+    def hay_ganador(self, tablero):
+        # Revisa si hay 3 símbolos iguales en línea
         lineas = (
-            self.tablero[0], self.tablero[1], self.tablero[2],
-            [self.tablero[i][0] for i in range(3)],
-            [self.tablero[i][1] for i in range(3)],
-            [self.tablero[i][2] for i in range(3)],
-            [self.tablero[i][i] for i in range(3)],
-            [self.tablero[i][2 - i] for i in range(3)]
+            tablero[0], tablero[1], tablero[2],
+            [tablero[i][0] for i in range(3)],
+            [tablero[i][1] for i in range(3)],
+            [tablero[i][2] for i in range(3)],
+            [tablero[i][i] for i in range(3)],
+            [tablero[i][2 - i] for i in range(3)]
         )
         for linea in lineas:
             if linea == ['X', 'X', 'X'] or linea == ['O', 'O', 'O']:
                 return True
         return False
 
-    def tablero_lleno(self):
-        # Verifica si el tablero está lleno, es decir, si no hay espacios en blanco en ninguna casilla.
-        return all(' ' not in row for row in self.tablero)
+    def tablero_lleno(self, tablero):
+        # Revisa si el tablero está completamente lleno
+        return all(casilla != ' ' for fila in tablero for casilla in fila)
 
     def juego_terminado(self):
-        # Verifica si el juego ha terminado, ya sea porque hay un ganador o porque el tablero está lleno.
-        return self.hay_ganador() or self.tablero_lleno()
+        # Verifica si el juego ha terminado porque hay un ganador o el tablero está lleno
+        return self.hay_ganador(self.tablero) or self.tablero_lleno(self.tablero)
 
 class JugadorHumano:
     def __init__(self, simbolo):
-        # Inicializa el jugador humano con su símbolo ('X' o 'O').
+        # Inicializa al jugador humano con su símbolo asignado
         self.simbolo = simbolo
 
     def hacer_movimiento(self):
-        # Solicita al usuario que ingrese la fila y columna donde quiere colocar su símbolo.
+        # El jugador humano ingresa la posición donde quiere jugar
         fila = int(input("Ingrese la fila (0-2): "))
         columna = int(input("Ingrese la columna (0-2): "))
         return fila, columna
 
 class JugadorComputadora:
     def __init__(self, simbolo):
-        # Inicializa el jugador de la computadora con su símbolo ('X' o 'O').
+        # Inicializa al jugador computadora con su símbolo asignado
         self.simbolo = simbolo
+        self.simbolo_oponente = 'O' if simbolo == 'X' else 'X'
 
     def hacer_movimiento(self, tablero):
-        # Genera una lista de movimientos disponibles en el tablero (casillas vacías).
-        # Retorna el primer movimiento disponible (es decir, la primera casilla vacía).
-        movimientos_disponibles = [(fila, columna) for fila in range(3) for columna in range(3) if tablero[fila][columna] == ' ']
-        return movimientos_disponibles[0] if movimientos_disponibles else None
+        # Utiliza el algoritmo minimax para encontrar el mejor movimiento
+        _, mejor_movimiento = self.minimax(tablero, self.simbolo)
+        return mejor_movimiento
+
+    def minimax(self, tablero, jugador_actual):
+        # Implementación del algoritmo minimax para determinar el mejor movimiento
+        if gato.hay_ganador(tablero):
+            # Retorna puntuación positiva si gana el oponente, negativa si gana el jugador de la IA
+            return (1 if jugador_actual == self.simbolo_oponente else -1), None
+        elif gato.tablero_lleno(tablero):
+            # Retorna 0 si hay un empate
+            return 0, None
+
+        if jugador_actual == self.simbolo:
+            mejor_puntuacion = float('-inf')
+        else:
+            mejor_puntuacion = float('inf')
+        mejor_movimiento = None
+
+        for fila in range(3):
+            for columna in range(3):
+                if tablero[fila][columna] == ' ':
+                    # Prueba el movimiento
+                    tablero[fila][columna] = jugador_actual
+                    puntuacion, _ = self.minimax(tablero, self.simbolo_oponente if jugador_actual == self.simbolo else self.simbolo)
+                    # Deshace el movimiento
+                    tablero[fila][columna] = ' '
+                    # Evalúa el movimiento
+                    if jugador_actual == self.simbolo:
+                        if puntuacion > mejor_puntuacion:
+                            mejor_puntuacion = puntuacion
+                            mejor_movimiento = (fila, columna)
+                    else:
+                        if puntuacion < mejor_puntuacion:
+                            mejor_puntuacion = puntuacion
+                            mejor_movimiento = (fila, columna)
+
+        return mejor_puntuacion, mejor_movimiento
 
 def jugar():
-    # Inicializa una instancia del juego del Gato.
+    global gato
     gato = Gato()
-    # Crea una lista de jugadores, un humano y una computadora.
     jugadores = [JugadorHumano('X'), JugadorComputadora('O')]
-    # Inicializa el turno actual como el primer jugador en la lista.
     turno_actual = 0
 
-    # Loop principal del juego, que continúa hasta que el juego termina.
     while not gato.juego_terminado():
         print(gato)
-        # Determina el jugador actual según el turno.
         jugador_actual = jugadores[turno_actual % 2]
 
         if isinstance(jugador_actual, JugadorHumano):
-            # Si el jugador es humano, solicita su movimiento.
             fila, columna = jugador_actual.hacer_movimiento()
         else:
-            # Si el jugador es la computadora, obtiene su movimiento automáticamente.
             fila, columna = jugador_actual.hacer_movimiento(gato.tablero)
 
-        # Realiza el movimiento en el tablero.
         gato.hacer_movimiento(fila, columna)
-        # Cambia al siguiente turno.
+
+        if gato.hay_ganador(gato.tablero):
+            print(f"Jugador {jugador_actual.simbolo} ha ganado!")
+            break
+        elif gato.tablero_lleno(gato.tablero):
+            print("Empate!")
+            break
+
         turno_actual += 1
 
     print(gato)
 
-    if gato.hay_ganador():
-        # Si hay un ganador, imprime el mensaje correspondiente.
-        print(f"¡El jugador {gato.turno} ha ganado!")
-    else:
-        # Si no hay ganador, se declara empate.
-        print("¡Empate!")
-
-if __name__ == "__main__":
-    # Inicia el juego cuando se ejecuta el script.
-    jugar()
+jugar()
