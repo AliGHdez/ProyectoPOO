@@ -1,0 +1,119 @@
+class Gato:
+    def __init__(self):
+        self.tablero = [[' ' for _ in range(3)] for _ in range(3)]
+        self.turno = 'X'
+
+    def __repr__(self):
+        # Mejora la visualización del tablero con líneas horizontales.
+        tablero_str = '\n'.join([' | '.join(row) for row in self.tablero])
+        separador = "\n--+---+--\n"
+        return separador.join(tablero_str.split("\n"))
+
+    def hacer_movimiento(self, fila, columna):
+        # Solo permite hacer un movimiento si la casilla está vacía.
+        if self.tablero[fila][columna] == ' ':
+            self.tablero[fila][columna] = self.turno
+            self.turno = 'O' if self.turno == 'X' else 'X'
+            return True
+        else:
+            return False
+
+    def hay_ganador(self):
+        # Verifica todas las posibles líneas ganadoras.
+        lineas = (
+            self.tablero[0], self.tablero[1], self.tablero[2],
+            [self.tablero[i][0] for i in range(3)],
+            [self.tablero[i][1] for i in range(3)],
+            [self.tablero[i][2] for i in range(3)],
+            [self.tablero[i][i] for i in range(3)],
+            [self.tablero[i][2 - i] for i in range(3)]
+        )
+        for linea in lineas:
+            if linea == ['X', 'X', 'X'] or linea == ['O', 'O', 'O']:
+                return True
+        return False
+
+    def tablero_lleno(self):
+        # Verifica si el tablero está completamente lleno.
+        return all(casilla != ' ' for fila in self.tablero for casilla in fila)
+
+    def juego_terminado(self):
+        # Comprueba si el juego ha terminado por victoria o por tablero lleno.
+        return self.hay_ganador() or self.tablero_lleno()
+
+class JugadorHumano:
+    def __init__(self, simbolo):
+        self.simbolo = simbolo
+
+    def hacer_movimiento(self, tablero):
+        # Permite al jugador humano realizar un movimiento.
+        while True:
+            try:
+                fila = int(input("Ingrese la fila (0-2): "))
+                columna = int(input("Ingrese la columna (0-2): "))
+                if fila in range(3) and columna in range(3) and tablero[fila][columna] == ' ':
+                    return fila, columna
+                else:
+                    print("Movimiento inválido. Por favor, inténtalo de nuevo.")
+            except ValueError:
+                print("Entrada inválida. Asegúrate de ingresar números.")
+
+class JugadorComputadora:
+    def __init__(self, simbolo):
+        self.simbolo = simbolo
+
+    def hacer_movimiento(self, tablero):
+        # Implementación básica de movimiento para la computadora. Podría mejorarse.
+        for fila in range(3):
+            for columna in range(3):
+                if tablero[fila][columna] == ' ':
+                    return fila, columna
+
+def elegir_simbolo():
+    # Permite al jugador elegir entre ser X o O.
+    while True:
+        simbolo = input("Elige tu símbolo (X/O): ").upper()
+        if simbolo in ['X', 'O']:
+            return simbolo, 'O' if simbolo == 'X' else 'X'
+        else:
+            print("Símbolo inválido. Por favor, elige X o O.")
+
+def jugar():
+    print("Bienvenido al juego del Gato (Tic-Tac-Toe)!\n")
+    jugador_simbolo, computadora_simbolo = elegir_simbolo()
+    print(f"Tú serás '{jugador_simbolo}' y tu oponente será '{computadora_simbolo}'.\n")
+
+    while True:
+        gato = Gato()
+        jugador_humano = JugadorHumano(jugador_simbolo)
+        jugador_computadora = JugadorComputadora(computadora_simbolo)
+        turno_actual = 'X'
+
+        while not gato.juego_terminado():
+            print(gato)
+            if turno_actual == jugador_humano.simbolo:
+                print("Tu turno.")
+                fila, columna = jugador_humano.hacer_movimiento(gato.tablero)
+            else:
+                print("Turno de la computadora...")
+                fila, columna = jugador_computadora.hacer_movimiento(gato.tablero)
+
+            if not gato.hacer_movimiento(fila, columna):
+                print("Casilla ocupada, elige otra.")
+                continue
+
+            turno_actual = 'O' if turno_actual == 'X' else 'X'
+
+            if gato.juego_terminado():
+                print(gato)
+                if gato.hay_ganador():
+                    ganador = "¡Felicidades! Has ganado." if turno_actual != jugador_humano.simbolo else "La computadora ha ganado."
+                    print(ganador)
+                else:
+                    print("¡Empate!")
+                break
+
+        if input("¿Quieres jugar otra vez? (s/n): ").lower() != 's':
+            break
+
+jugar()
